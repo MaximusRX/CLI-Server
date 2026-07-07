@@ -18,7 +18,6 @@ int main(){
 	FD_SET(STDIN, &FdSet);
 
 	set_def_settings();
-	server_info();
 	main_menu();
 
 	while(true){
