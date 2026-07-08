@@ -1,24 +1,47 @@
 #include "include/colors.h"
 #include "include/stdtypes.h"
 #include "include/server_defaults.h"
+#include "net/DNP.h"
 
 
 int main(){
+
+	int sock = DNP_SETUP_SERVER(&addr);
 
 	fd_set FdSet;
 	struct timeval time;
 
 	char input_buff[INPUT_BUFF_SIZE];
 
-	int IsReady = 0;
+	max_fd = sock;
 
-	int input_index = 0;
+	if(!net_log_init() ){ return -1;}
+
+	DNP_log("Logger Set Up...", "a");
+
+	if(sock == -1){DNP_log("Failed To Get Valid FD\n", "a"); return -1;}
+
+	int binder = bind(sock, (struct sockaddr*) &addr, addr_size);
+
+	if(binder == -1){DNP_log("Server Failed to bind", "a");}
+	else if(binder == 0){DNP_log("SERVER SUCESFULLY BINDED", "a"); }
+
+	int listener = listen(sock, MAX_CLIENTS);
+
+	if(listener == -1){DNP_log("[DNP LOG] FAILED TO LISTEN FOR CONNECTIONS", "a"); }
+	else if(listener == 0){DNP_log("[DNP LOG] LISTENING FOR CONNECTIONS", "a"); }
+
+	DNP_init_client_arr();
+	DNP_get_client_stats();
 
 	FD_ZERO(&FdSet);
-	FD_SET(STDIN, &FdSet);
+	FD_SET(STDIN,&FdSet);
+	FD_SET(sock, &FdSet);
 
 	set_def_settings();
 	main_menu();
+
+	if(sock == -1){ DNP_log("DAILED TO SETUP SERVER, SOCK == -1\n", "a") ;return -1;}
 
 	while(true){
 
@@ -27,14 +50,41 @@ int main(){
 		time.tv_sec = 1;
 		time.tv_usec = 0;
 
-		IsReady = select(STDIN + 1, &tempt_set, NULL, NULL, &time);
+		IsReady = select(sock + 1, &tempt_set, NULL, NULL, &time);
 
 		if(IsReady){
 
 			if(FD_ISSET(STDIN, &tempt_set)){
-
+				clear_screen();
 				input_handler(input_buff);
 				main_menu();
+
+			}
+
+			else if(FD_ISSET(sock, &tempt_set)){
+				int accepted_fd = accept(sock, (struct sockaddr* ) &addr, &addr_size);
+
+				if(accepted_fd > 0){
+
+					if(accepted_fd > max_fd){
+
+						int max_fd = accepted_fd;
+
+					}
+
+					int status = DNP_get_valid_slot();
+
+					if(status == -1){ DNP_log("Failed to get falid index for client", "a"); close(accepted_fd); }
+
+					DNP_assing_client(&client[status], accepted_fd);
+
+					FD_SET(accepted_fd, &FdSet);
+					active_clients++;
+					empty_slots--;
+
+					DNP_log("Client connected with FD %d and was assigned slot %d\n", "a", accepted_fd, status);
+
+				}
 
 			}
 

@@ -2,6 +2,10 @@
 #include <stdarg.h>
 
 DNP_Logger DNP_logger;
+DNP_CLIENT client[MAX_CLIENTS];
+
+int active_clients = 0;
+int empty_slots = 0;
 
 
 void DNP_set_struct(int family,int port, const char* ip, struct sockaddr_in *addr){
@@ -12,6 +16,18 @@ void DNP_set_struct(int family,int port, const char* ip, struct sockaddr_in *add
     if(ip == NULL){addr->sin_addr.s_addr = INADDR_ANY; }
     else { inet_pton(family, ip, &addr->sin_addr.s_addr);}
     
+}
+
+int DNP_SETUP_SERVER(struct sockaddr_in *addr){
+
+    addr->sin_family = FAMILY;
+    addr->sin_port = htons(PORT);
+    addr->sin_addr.s_addr = SERVER_IP;
+    int sock = DNP_socket();
+
+    if(sock <= 0){ return -1; }
+    return sock;
+
 }
 
 int DNP_send(DNP_CLIENT *client, char* buff){
@@ -153,7 +169,7 @@ int DNP_socket(){
     return sock_main;
 }
 
-void DNP_init_client(DNP_CLIENT *client){
+int DNP_init_client(DNP_CLIENT *client){
 
     client->IS_ACTIVE = false;
     client->socket = 0;
@@ -165,6 +181,8 @@ void DNP_init_client(DNP_CLIENT *client){
     client->header.send_payload_size = 0;
     client->header.recv_payload_type = 999;
     client->header.send_payload_type = 999;
+
+    return 0;
 
 }
 
@@ -307,4 +325,56 @@ int DNP_log(const char* string_msg, const char* mode,...){
 
     va_end(args);
     return 0;
+}
+
+int DNP_init_client_arr(){
+
+    for(int i = 0; i < MAX_CLIENTS; i++){
+
+       DNP_init_client(&client[i]);
+       client[i].index = i;
+
+    }
+
+    return 0;
+
+}
+
+int DNP_get_valid_slot(){
+
+	for(int i = 0; i < MAX_CLIENTS; i++){
+
+		if(!client->IS_ACTIVE){
+
+			DNP_log(  "[DNP LOG] found a valid slot at index %d", "a", i);
+			return i;
+
+		}
+
+	}
+    DNP_log(  "[DNP LOG] Failed to get valid a slot", "a");
+    return -1;
+}
+
+void DNP_get_client_stats(){
+
+    active_clients = 0;
+    empty_slots = 0;
+
+    for(int i = 0; i < MAX_CLIENTS; i++){
+
+        if(client[i].IS_ACTIVE){
+
+            active_clients++;
+
+        }
+
+        else{
+
+            empty_slots++;
+
+        }
+
+    }
+
 }

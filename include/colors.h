@@ -9,6 +9,7 @@
 #define WHITE "\033[37m"
 
 #define CLEAR_SCREEN "\033[2J"
+#define RESET_CURSOR_POS "\033[H"
 #define RESET_COLOR "\033[0m"
 
 void clear_screen();

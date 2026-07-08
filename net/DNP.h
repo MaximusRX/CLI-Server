@@ -26,8 +26,12 @@
 #define PORT 6767
 #define FAMILY AF_INET
 #define EXTERN_IP "192.168.10.211"
-#define LOOP_IP INADDR_ANY
+#define SERVER_IP INADDR_ANY
 #define ADDR INADDR_ANY;
+
+extern int active_clients;
+extern int empty_slots;
+
 /*
     The types of paylods to send and recv.
 */
@@ -66,11 +70,14 @@ typedef struct{
 
     int socket;
     bool IS_ACTIVE;
+    int index;
 
     DNP_PACKET packet;
     DNP_HEADER header;
 
 } DNP_CLIENT;
+
+extern DNP_CLIENT client[];
 
 /*
     This is the logger struct, used to log events.
@@ -131,7 +138,7 @@ int DNP_assing_client(DNP_CLIENT *client,int client_fd);
     connects it needs a slot, if the array is not initilized it would not be
     possable to assing it to a slot/index
 */
-void DNP_init_client(DNP_CLIENT *client);
+int DNP_init_client(DNP_CLIENT *client);
 
 /*
     This function splits a command into 2x parts, the command type and the payload, 
@@ -156,3 +163,29 @@ void DNP_get_cmd_type(DNP_CLIENT *client);
 */
 
 int DNP_log(const char* string_msg, const char* mode,...);
+
+/*
+    This function takes a addr, it sets the addr and returns a socket.
+*/
+
+int DNP_SETUP_SERVER(struct sockaddr_in *addr);
+
+/*
+    This function inits the client array, inits MAX_CLIENTS amount of clints.
+*/
+
+int DNP_init_client_arr();
+
+/*
+    This function tries to find a valid slot in the client array, if it fails it returns -1, else returns 
+    valid slot.
+*/
+
+int DNP_get_valid_slot();
+
+/*
+    This function iterates through the client array to find how many active,inactive and unasigned slots and
+    clients there are.
+*/
+
+void DNP_get_client_stats();
