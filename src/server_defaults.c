@@ -1,19 +1,23 @@
 #include "../include/server_defaults.h"
-#include <string.h>
-#include <unistd.h>
+#include <stdlib.h>
 
 server_settings settings;
 struct sockaddr_in addr;
+
+Token tokens[MAX_TOKENS];
+int LastTokIndex = 0;
 
 int IsReady = 0;
 socklen_t addr_size = sizeof(addr);
 int max_fd = 0;
 int selected_fd = 0;
 int sock = 0;
+int tempt_num = 0;
 
 void input_handler(char* input_buff){
 
     memset(input_buff, 0, INPUT_BUFF_SIZE);
+    LastTokIndex = 0;
 
     const char delim[] = " ";
 
@@ -27,119 +31,182 @@ void input_handler(char* input_buff){
 
         if(strcmp(token, "exit") == 0){
 
-            exit(0);
+            tokens[LastTokIndex].type = TOK_EXIT;
+            LastTokIndex++;
+            token = strtok(NULL, delim);
 
         }
 
         else if (strcmp(token, "help") == 0) {
 
-            help_menu();
-            return;
+            tokens[LastTokIndex].type = TOK_HELP;
+            LastTokIndex++;
+            token = strtok(NULL, delim);
         }
 
         else if (strcmp(token, "clear") == 0) {
 
-            clear_screen();
-            return;
+            tokens[LastTokIndex].type = TOK_CLEAR;
+            token = strtok(NULL, delim);
         }
 
         else if (strcmp(token, "enable") == 0) {
 
+            tokens[LastTokIndex].type = TOK_ENABLE;
+            LastTokIndex++;
             token = strtok(NULL, delim);
-
-            if(token == NULL){ printf("Error, invalid command\n"); return; }
-
-            else if (strcmp(token, "server-info") == 0) {
-                
-                settings.show_server_info = true;
-                return;
-
-            }
-
-            else if (strcmp(token, "show-connected-clients") == 0) {
-                
-                settings.show_connected_clients = true;
-                return;
-
-            }
-
-            else if (strcmp(token, "show-unavalable-slots") == 0){
-
-                settings.show_unavalable_clients = true;
-                return;
-            }
-
-            else{
-
-                printf("Error, else hit for strtok, enable secton\n");
-                help_menu();
-                return;
-            }
-
 
         }
 
         else if (strcmp(token, "disable") == 0) {
 
+            tokens[LastTokIndex].type = TOK_DISABLE;
+            LastTokIndex++;
             token = strtok(NULL, delim);
 
-            if(token == NULL){ printf("Error, invalid command\n"); return; }
-
-            else if (strcmp(token, "server-info") == 0) {
-                
-                settings.show_server_info = false;
-                return;
-        
-            }
-
-            else if (strcmp(token, "show-connected-clients") == 0) {
-                
-                settings.show_connected_clients = false;
-                return;
-            }
-
-            else if (strcmp(token, "show-unavalable-slots") == 0){
-
-                settings.show_unavalable_clients = false;
-                return;
-            }
-
-            else{
-
-                printf("Error, unknown option paired with enable\n");
-                help_menu();
-                return;
-            }
         }
         
         else if (strcmp(token, "select") == 0) {
-            
+
+            tokens[LastTokIndex].type = TOK_SELECT;
+            LastTokIndex++;
+
             token = strtok(NULL, delim);
-            if(token == NULL){ printf("Error, invalid command\n"); return; }
 
-            int num = *token - '0';
+            if(token == NULL){printf("Incomplete usage of select\n"); return;}
 
-            if(client[num].IS_ACTIVE){
-
-                selected_fd = client[num].socket;
-                return;
-            }
-
-            else if (!client[num].IS_ACTIVE) {
-
-                printf("Unavalable client selected\n");
-                return;
-
-            }
+            tokens[LastTokIndex].type = TOK_INT;
+            strcpy(tokens[LastTokIndex].value, token);
 
         }
+
+        else if (strcmp(token, "send") == 0) {
+
+            tokens[LastTokIndex].type = TOK_SEND;
+            LastTokIndex++;
+
+            token = strtok(NULL, delim);
+
+            tokens[LastTokIndex].type = TOK_INT;
+            strcpy(token, tokens[LastTokIndex].value);
+            LastTokIndex++;
+
+            token = strtok(NULL, delim);
+
+            strcpy(token, tokens[LastTokIndex].value);
+            LastTokIndex++;      
+
+            return;
+
+        }
+
+        else if (strcmp(token, "show-connected-clients") == 0) {
+            tokens[LastTokIndex].type = TOK_SHOW_CONNECTED_CLIENTS;
+            LastTokIndex++;
+            token = strtok(NULL, delim);
+        }   
+
+        else if (strcmp(token, "show-unavalable-slots") == 0) {
+            tokens[LastTokIndex].type = TOK_SHOW_UNAVLABLE_SLOTS;
+            LastTokIndex++;
+            token = strtok(NULL, delim);
+        }           
+
+        else if (strcmp(token, "server-info") == 0) {
+            tokens[LastTokIndex].type = TOK_SERVER_INFO;
+            LastTokIndex++;
+            token = strtok(NULL, delim);
+        }   
 
         else{
 
-            printf("Invalid command: " CYAN "%s\n" RESET_COLOR, token);
+            tokens[LastTokIndex].type = TOK_UNKNOWN;
+            tokens[LastTokIndex].value[strlen(tokens[LastTokIndex].value)] = '\0';
+            strcpy(tokens[LastTokIndex].value, token);
+            LastTokIndex++;
+            token = strtok(NULL, delim);
+
+        }
+
+    }
+
+    switch (tokens[0].type) {
+
+        case TOK_EXIT:
+            exit(0);
+            break;
+
+        case TOK_HELP:
             help_menu();
             break;
-        }
+
+        case TOK_CLEAR:
+            clear_screen();
+            break;
+
+        case TOK_UNKNOWN:
+            printf("Inavlid command: %s\n", tokens[0].value);
+            break;
+
+        case TOK_DISABLE:
+
+            if(tokens[1].type == TOK_SHOW_CONNECTED_CLIENTS){
+                settings.show_connected_clients = false;
+            }
+
+            else if(tokens[1].type == TOK_SERVER_INFO){
+                settings.show_server_info = false;
+            }
+
+            else if(tokens[1].type == TOK_SHOW_UNAVLABLE_SLOTS){
+                settings.show_unavalable_clients = false;
+            }    
+            
+            else{
+
+                printf("Incomplete or incorrect usage of disble\n");
+                printf("Tok 1: %s\n", tokens[1].value);
+                break;
+
+            }
+
+            break;
+
+        case TOK_ENABLE:
+
+            if(tokens[1].type == TOK_SHOW_CONNECTED_CLIENTS){
+                settings.show_connected_clients = true; 
+            }
+
+            else if(tokens[1].type == TOK_SERVER_INFO){
+                settings.show_server_info = true;
+                printf("ENABLED\n");
+            }
+
+            else if(tokens[1].type == TOK_SHOW_UNAVLABLE_SLOTS){
+                settings.show_unavalable_clients = true;
+            }    
+
+            else{
+
+                printf("Incomplete or incorrect usage of enable\n");
+                printf("Tok 1: %s\n", tokens[1].value);
+                break;
+
+            }
+
+            break;
+
+        case TOK_SELECT:
+
+            tempt_num = atoi(tokens[1].value);
+
+            if(tempt_num > 80 || tempt_num < 0){printf("Invalid usage of select\n"); break; }
+            
+            selected_fd = client[tempt_num].socket;
+
+            break;
+
 
     }
 
@@ -149,19 +216,19 @@ void main_menu(){
 
     server_status();
 
-    int index;
+    int index = -1;
 
+    for(int i = 0; i < MAX_CLIENTS; i++){
 
-    if(selected_fd == 0){printf("SELECTED CLIENT AT INDEX: " CYAN "NONE\n"); }
+        if(client[i].socket == selected_fd && client[i].IS_ACTIVE){index = client[i].index; }
+
+    }
+
+    if(index == -1){printf("Selected client at index: " CYAN "NONE\n" RESET_COLOR); }
+
     else{
 
-        for(int i = 0; i < MAX_CLIENTS; i++){
-
-            if(client[i].socket == selected_fd){ index = client[i].index; }
-            break;
-        }
-
-        printf("SELECTED CLIENT AT INDEX: " CYAN "%d\n", index);
+        printf("Selected client at index: " CYAN "%d\n" RESET_COLOR, index);
 
     }
 

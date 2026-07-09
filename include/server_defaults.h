@@ -12,6 +12,21 @@ typedef struct{
 
 } server_settings;
 
+enum{
+
+    TOK_ENABLE, TOK_DISABLE, TOK_SEND, TOK_INFO, TOK_INT, TOK_STRING, TOK_EXIT, TOK_HELP, TOK_CLEAR, 
+    TOK_SELECT, TOK_UNKNOWN, TOK_SHOW_CONNECTED_CLIENTS, TOK_SHOW_UNAVLABLE_SLOTS, TOK_SHOW_INFO,
+    TOK_SERVER_INFO
+
+};
+
+typedef struct{
+
+    int type;
+    char value[12];
+
+} Token;
+
 
 void input_handler(char* input_buff);
 void main_menu();
@@ -25,7 +40,11 @@ void help_menu();
 
 extern struct sockaddr_in addr;
 extern DNP_CLIENT client[];
+
+extern Token tokens[];
+
 extern int IsReady;
+extern int LastTokIndex;
 extern int max_fd;
 extern socklen_t addr_size;
 extern int selected_fd;

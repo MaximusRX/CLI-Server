@@ -14,5 +14,6 @@
 #define SERVER_VERSION 1
 #define SERVER_ROLL "OVERLORD"
 #define STDIN 0
+#define MAX_TOKENS 20
 
 extern char input_buff[];
