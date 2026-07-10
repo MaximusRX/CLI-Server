@@ -6,11 +6,14 @@ struct sockaddr_in addr;
 
 Token tokens[MAX_TOKENS];
 int LastTokIndex = 0;
+int LastRedyIndex = 0;
+int ready_clients[MAX_CLIENTS];
 
 int IsReady = 0;
 socklen_t addr_size = sizeof(addr);
 int max_fd = 0;
 int selected_fd = 0;
+int selected_fd_index = 0;
 int sock = 0;
 int tempt_num = 0;
 
@@ -18,6 +21,7 @@ void input_handler(char* input_buff){
 
     memset(input_buff, 0, INPUT_BUFF_SIZE);
     LastTokIndex = 0;
+    set_tokens();
 
     const char delim[] = " ";
 
@@ -76,6 +80,7 @@ void input_handler(char* input_buff){
             if(token == NULL){printf("Incomplete usage of select\n"); return;}
 
             tokens[LastTokIndex].type = TOK_INT;
+            selected_fd_index = atoi(tokens[LastTokIndex].value);
             strcpy(tokens[LastTokIndex].value, token);
 
         }
@@ -85,19 +90,15 @@ void input_handler(char* input_buff){
             tokens[LastTokIndex].type = TOK_SEND;
             LastTokIndex++;
 
-            token = strtok(NULL, delim);
+            char test_delim[] = "|";
 
-            tokens[LastTokIndex].type = TOK_INT;
-            strcpy(token, tokens[LastTokIndex].value);
-            LastTokIndex++;
+            token = strtok(NULL, test_delim);
 
-            token = strtok(NULL, delim);
-
-            strcpy(token, tokens[LastTokIndex].value);
+            strcpy(tokens[LastTokIndex].value, token);
+            tokens[LastTokIndex].type = TOK_STRING;
             LastTokIndex++;      
 
-            return;
-
+            token = NULL;
         }
 
         else if (strcmp(token, "show-connected-clients") == 0) {
@@ -117,6 +118,12 @@ void input_handler(char* input_buff){
             LastTokIndex++;
             token = strtok(NULL, delim);
         }   
+
+        else if (strcmp(token, "info") == 0) {
+            tokens[LastTokIndex].type = TOK_INFO;
+            LastTokIndex++;
+            token = strtok(NULL, delim);
+        } 
 
         else{
 
@@ -207,6 +214,23 @@ void input_handler(char* input_buff){
 
             break;
 
+        case TOK_SEND:
+
+            DNP_send(&client[selected_fd_index], tokens[1].value);
+            printf("Send %s\n", tokens[1].value);
+
+            break;
+
+        case TOK_INFO:
+
+                if(selected_fd != -1){
+
+                    printf("RECVD: " CYAN "%s\n" RESET_COLOR,client[selected_fd_index].packet.recv_payload);
+
+                }
+
+            break;
+
 
     }
 
@@ -217,6 +241,12 @@ void main_menu(){
     server_status();
 
     int index = -1;
+
+    for(int i = 0; i < LastRedyIndex; i++){
+
+        printf("Ready clients: " CYAN "%d\n", ready_clients[i]) ;
+
+    }
 
     for(int i = 0; i < MAX_CLIENTS; i++){
 
@@ -302,5 +332,16 @@ void help_menu(){
     printf("The disable command can set the following settings to false/inactive: " CYAN 
     "server-info " RESET_COLOR "," CYAN "show-connected-clients "  RESET_COLOR "," CYAN "show-unavalable-slots\n" RESET_COLOR);
 
+
+}
+
+void set_tokens(){
+
+    for(int i = 0; i < MAX_TOKENS; i++){
+
+        tokens[i].type = TOK_EMPTY;
+        memset(tokens[i].value, 0, TOKEN_MAX_VAL_SIZE);
+
+    }
 
 }

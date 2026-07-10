@@ -119,7 +119,6 @@ int DNP_get_headder(DNP_CLIENT *client){
         client->packet.recv_payload = malloc(client->header.recv_payload_size + 1);
         client->packet.recv_payload[client->header.recv_payload_size] = '\0';
 
-        printf("MALLOCED\n");
     }
 
 
@@ -127,7 +126,6 @@ int DNP_get_headder(DNP_CLIENT *client){
     else { client->packet.recv_payload = malloc(client->header.recv_payload_size + 1);
             client->packet.recv_payload[client->header.recv_payload_size] = '\0';
 
-            printf("MALLOCED\n");
     }
 
     return recvd_bytes;

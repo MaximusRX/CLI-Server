@@ -2,6 +2,7 @@
 #include "include/stdtypes.h"
 #include "include/server_defaults.h"
 #include "net/DNP.h"
+#include <sys/select.h>
 
 
 int main(){
@@ -50,7 +51,7 @@ int main(){
 		time.tv_sec = 1;
 		time.tv_usec = 0;
 
-		IsReady = select(sock + 1, &tempt_set, NULL, NULL, &time);
+		IsReady = select(max_fd + 1, &tempt_set, NULL, NULL, &time);
 
 		if(IsReady){
 
@@ -62,13 +63,14 @@ int main(){
 			}
 
 			else if(FD_ISSET(sock, &tempt_set)){
+
 				int accepted_fd = accept(sock, (struct sockaddr* ) &addr, &addr_size);
 
 				if(accepted_fd > 0){
 
 					if(accepted_fd > max_fd){
 
-						int max_fd = accepted_fd;
+						max_fd = accepted_fd;
 
 					}
 
@@ -83,6 +85,43 @@ int main(){
 					empty_slots--;
 
 					DNP_log("Client connected with FD %d and was assigned slot %d\n", "a", accepted_fd, status);
+
+				}
+
+			}
+
+			else{
+
+				for(int i = 0; i < MAX_CLIENTS; i++){
+
+					if(FD_ISSET(client[i].socket, &tempt_set)){
+
+						printf("Found set client FD\n");
+						int status = DNP_recv(&client[i]);
+						ready_clients[LastRedyIndex] = client[i].index;
+
+						if(status == 0){
+
+							printf("Recv == 0\n");
+							active_clients--;
+							empty_slots++;
+							FD_CLR(client[i].socket, &FdSet);
+						}
+
+						else if (status == -1) {
+							
+							printf("status == -1\n");
+							active_clients--;
+							empty_slots++;
+							FD_CLR(client[i].socket, &FdSet);
+
+						}
+
+						else{
+							LastRedyIndex++;
+						}
+
+					}
 
 				}
 

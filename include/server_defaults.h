@@ -4,6 +4,8 @@
 #include <netinet/in.h>
 #include <unistd.h>
 
+#define TOKEN_MAX_VAL_SIZE 12
+
 typedef struct{
 
     bool show_connected_clients;
@@ -16,14 +18,14 @@ enum{
 
     TOK_ENABLE, TOK_DISABLE, TOK_SEND, TOK_INFO, TOK_INT, TOK_STRING, TOK_EXIT, TOK_HELP, TOK_CLEAR, 
     TOK_SELECT, TOK_UNKNOWN, TOK_SHOW_CONNECTED_CLIENTS, TOK_SHOW_UNAVLABLE_SLOTS, TOK_SHOW_INFO,
-    TOK_SERVER_INFO
+    TOK_SERVER_INFO, TOK_EMPTY
 
 };
 
 typedef struct{
 
     int type;
-    char value[12];
+    char value[TOKEN_MAX_VAL_SIZE];
 
 } Token;
 
@@ -37,13 +39,16 @@ void server_info();
 bool net_log_init();
 void client_manager(int index);
 void help_menu();
+void set_tokens();
 
 extern struct sockaddr_in addr;
 extern DNP_CLIENT client[];
 
 extern Token tokens[];
+extern int ready_clients[MAX_CLIENTS];
 
 extern int IsReady;
+extern int LastRedyIndex;
 extern int LastTokIndex;
 extern int max_fd;
 extern socklen_t addr_size;
