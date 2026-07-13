@@ -108,13 +108,12 @@ int DNP_get_headder(DNP_CLIENT *client){
     client->header.recv_payload_size = ntohl( buff[0] );
     client->header.recv_payload_type = ntohl ( buff[1] );
 
-    if(client->header.recv_payload_size >  5242880 ){ printf("RECV'd A INVALID SIZE, CLOSING CONNECTION\n"); close(client->socket);}
+    if(client->header.recv_payload_size >  5242880 ){ DNP_log("RECV'd A INVALID SIZE, CLOSING CONNECTION\n", "a"); close(client->socket);}
 
     else if(client->packet.recv_payload != NULL){
         
         free(client->packet.recv_payload); client->packet.recv_payload = NULL;
-        
-        printf("RECV Buff was free'd and SET to NULL\n");
+    
         
         client->packet.recv_payload = malloc(client->header.recv_payload_size + 1);
         client->packet.recv_payload[client->header.recv_payload_size] = '\0';
@@ -170,15 +169,15 @@ int DNP_socket(){
 int DNP_init_client(DNP_CLIENT *client){
 
     client->IS_ACTIVE = false;
-    client->socket = 0;
+    client->socket = -1;
 
     client->packet.recv_payload = NULL;
     client->packet.send_payload = NULL;
 
     client->header.recv_payload_size = 0;
     client->header.send_payload_size = 0;
-    client->header.recv_payload_type = 999;
-    client->header.send_payload_type = 999;
+    client->header.recv_payload_type = UNKNOWN;
+    client->header.send_payload_type = UNKNOWN;
 
     return 0;
 

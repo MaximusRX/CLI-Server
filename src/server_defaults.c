@@ -125,6 +125,18 @@ void input_handler(char* input_buff){
             token = strtok(NULL, delim);
         } 
 
+        else if (strcmp(token, "show-max-fd") == 0) {
+            tokens[LastTokIndex].type = TOK_SHOW_MAX_FD;
+            LastTokIndex++;
+            token = strtok(NULL, delim);
+        }         
+
+        else if (strcmp(token, "show-server-fd") == 0) {
+            tokens[LastTokIndex].type = TOK_SHOW_SERVER_FD;
+            LastTokIndex++;
+            token = strtok(NULL, delim);
+        } 
+
         else{
 
             tokens[LastTokIndex].type = TOK_UNKNOWN;
@@ -167,8 +179,19 @@ void input_handler(char* input_buff){
 
             else if(tokens[1].type == TOK_SHOW_UNAVLABLE_SLOTS){
                 settings.show_unavalable_clients = false;
-            }    
             
+            }    
+       
+            else if(tokens[1].type == TOK_SHOW_MAX_FD){
+                settings.show_max_fd = false;
+            
+            }             
+
+            else if(tokens[1].type == TOK_SHOW_SERVER_FD){
+                settings.show_server_fd = false;
+            
+            } 
+
             else{
 
                 printf("Incomplete or incorrect usage of disble\n");
@@ -193,6 +216,16 @@ void input_handler(char* input_buff){
             else if(tokens[1].type == TOK_SHOW_UNAVLABLE_SLOTS){
                 settings.show_unavalable_clients = true;
             }    
+
+            else if(tokens[1].type == TOK_SHOW_MAX_FD){
+                settings.show_max_fd = true;
+            
+            }             
+
+            else if(tokens[1].type == TOK_SHOW_SERVER_FD){
+                settings.show_server_fd = true;
+            
+            } 
 
             else{
 
@@ -223,11 +256,20 @@ void input_handler(char* input_buff){
 
         case TOK_INFO:
 
-                if(selected_fd != -1){
+            if(selected_fd != -1){
 
-                    printf("RECVD: " CYAN "%s\n" RESET_COLOR,client[selected_fd_index].packet.recv_payload);
+                printf("RECVD: " CYAN "%s\n" RESET_COLOR,client[selected_fd_index].packet.recv_payload);
+                    
+                for(int i = 0; i < MAX_CLIENTS; i++){
+
+                    if(client[i].index == ready_clients[LastTokIndex]){
+
+                        LastRedyIndex--;
+
+                    }
 
                 }
+            }
 
             break;
 
@@ -236,7 +278,7 @@ void input_handler(char* input_buff){
 
 }
 
-void main_menu(){
+void main_menu(int* sock){
 
     server_status();
 
@@ -244,7 +286,7 @@ void main_menu(){
 
     for(int i = 0; i < LastRedyIndex; i++){
 
-        printf("Ready clients: " CYAN "%d\n", ready_clients[i]) ;
+        printf("Ready clients: " CYAN "%d\n" RESET_COLOR, ready_clients[i]);
 
     }
 
@@ -282,6 +324,9 @@ void server_status(){
     if(settings.show_connected_clients){ printf("CONNECTED CLIENTS: " WHITE "%d\n" RESET_COLOR, active_clients); }
     if(settings.show_unavalable_clients){ printf("UNAVALABLE / EMPTY SLOTS: " CYAN "%d\n" RESET_COLOR, empty_slots); }
 
+    if(settings.show_max_fd){printf("Max FD: " CYAN "%d\n" RESET_COLOR, max_fd); }
+    if(settings.show_server_fd){printf("SERVER FD: " CYAN "%d\n" RESET_COLOR, sock);}
+
 }
 
 void set_def_settings(){
@@ -289,6 +334,8 @@ void set_def_settings(){
     settings.show_connected_clients = true;
     settings.show_unavalable_clients = true;
     settings.show_server_info = true;
+    settings.show_max_fd = true;
+    settings.show_server_fd = true;
 
 }
 
@@ -343,5 +390,40 @@ void set_tokens(){
         memset(tokens[i].value, 0, TOKEN_MAX_VAL_SIZE);
 
     }
+
+}
+
+void disconnect(fd_set *FdSet, int index){
+
+	active_clients--;
+	empty_slots++;
+    max_fd = 0;
+
+	FD_CLR(client[index].socket, FdSet);
+
+    DNP_init_client(&client[index]);
+
+    for(int i = 0; i < MAX_CLIENTS; i++){
+
+
+        if(client[i].socket > max_fd && client[i].IS_ACTIVE){
+
+            max_fd = client[i].socket;
+
+            DNP_log("Assigned client at index %d socket num as new max fd\n", "a", i);
+
+        }
+
+    }
+
+    if(sock > max_fd ){
+
+        max_fd = sock;
+        DNP_log("Assigned server fd as new max fd\n", "a");
+        return;
+    }
+
+    DNP_log("Failed to get falid new fd\n", "a");
+    DNP_log("Sock size = %d, max_fd = %d\n", "a", sock, max_fd);
 
 }

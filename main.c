@@ -7,7 +7,7 @@
 
 int main(){
 
-	int sock = DNP_SETUP_SERVER(&addr);
+	sock = DNP_SETUP_SERVER(&addr);
 
 	fd_set FdSet;
 	struct timeval time;
@@ -40,11 +40,12 @@ int main(){
 	FD_SET(sock, &FdSet);
 
 	set_def_settings();
-	main_menu();
+	main_menu(&sock);
 
 	if(sock == -1){ DNP_log("DAILED TO SETUP SERVER, SOCK == -1\n", "a") ;return -1;}
 
 	while(true){
+
 
 		fd_set tempt_set = FdSet;
 
@@ -58,7 +59,7 @@ int main(){
 			if(FD_ISSET(STDIN, &tempt_set)){
 				clear_screen();
 				input_handler(input_buff);
-				main_menu();
+				main_menu(&sock);
 
 			}
 
@@ -71,6 +72,7 @@ int main(){
 					if(accepted_fd > max_fd){
 
 						max_fd = accepted_fd;
+						DNP_log("Max fd = an accepted conenction\n", "a");
 
 					}
 
@@ -96,28 +98,17 @@ int main(){
 
 					if(FD_ISSET(client[i].socket, &tempt_set)){
 
-						printf("Found set client FD\n");
 						int status = DNP_recv(&client[i]);
 						ready_clients[LastRedyIndex] = client[i].index;
 
-						if(status == 0){
+						if(status == 0 || status == -1){
 
-							printf("Recv == 0\n");
-							active_clients--;
-							empty_slots++;
-							FD_CLR(client[i].socket, &FdSet);
-						}
-
-						else if (status == -1) {
-							
-							printf("status == -1\n");
-							active_clients--;
-							empty_slots++;
-							FD_CLR(client[i].socket, &FdSet);
+							disconnect(&FdSet, i);
 
 						}
 
 						else{
+
 							LastRedyIndex++;
 						}
 
