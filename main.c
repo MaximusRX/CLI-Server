@@ -7,6 +7,8 @@
 
 int main(){
 
+	clear_screen();
+
 	sock = DNP_SETUP_SERVER(&addr);
 
 	fd_set FdSet;
@@ -43,6 +45,7 @@ int main(){
 	main_menu(&sock);
 
 	if(sock == -1){ DNP_log("DAILED TO SETUP SERVER, SOCK == -1\n", "a") ;return -1;}
+
 
 	while(true){
 

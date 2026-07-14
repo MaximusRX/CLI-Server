@@ -1,4 +1,5 @@
 #include "../include/server_defaults.h"
+#include <stdio.h>
 #include <stdlib.h>
 
 server_settings settings;
@@ -12,10 +13,11 @@ int ready_clients[MAX_CLIENTS];
 int IsReady = 0;
 socklen_t addr_size = sizeof(addr);
 int max_fd = 0;
-int selected_fd = 0;
-int selected_fd_index = 0;
+int selected_fd = -1;
+int selected_fd_index = -1;
 int sock = 0;
 int tempt_num = 0;
+bool show_clients = false;
 
 void input_handler(char* input_buff){
 
@@ -137,6 +139,24 @@ void input_handler(char* input_buff){
             token = strtok(NULL, delim);
         } 
 
+        else if (strcmp(token, "selected") == 0) {
+            tokens[LastTokIndex].type = TOK_SELECTED;
+            LastTokIndex++;
+            token = strtok(NULL, delim);
+        } 
+
+        else if (strcmp(token, "status") == 0) {
+            tokens[LastTokIndex].type = TOK_STATUS;
+            LastTokIndex++;
+            token = strtok(NULL, delim);
+        } 
+
+        else if (strcmp(token, "get-clients") == 0) {
+            tokens[LastTokIndex].type = TOK_SHOW_CLIENTS;
+            LastTokIndex++;
+            token = strtok(NULL, delim);
+        } 
+
         else{
 
             tokens[LastTokIndex].type = TOK_UNKNOWN;
@@ -242,8 +262,10 @@ void input_handler(char* input_buff){
             tempt_num = atoi(tokens[1].value);
 
             if(tempt_num > 80 || tempt_num < 0){printf("Invalid usage of select\n"); break; }
+            if(!client[tempt_num].IS_ACTIVE){printf("Invalid use of select, client is not avalable\n"); selected_fd_index = -1; break;}
             
             selected_fd = client[tempt_num].socket;
+            selected_fd_index = client[tempt_num].index;
 
             break;
 
@@ -273,16 +295,36 @@ void input_handler(char* input_buff){
 
             break;
 
+        case TOK_SELECTED:
+
+            if(selected_fd_index == -1){ printf("NO CLIENT SELECTED\n");    }
+
+            else{
+                
+                printf("SELECTED CLIENT AT INDEX: " CYAN "%d\n", selected_fd_index);
+            }
+
+            break;
+
+        case TOK_STATUS:
+
+                settings.show_status = true;
+
+            break;
+
+        case TOK_SHOW_CLIENTS:   
+
+                show_clients = true;
+
+            break;
 
     }
 
 }
 
-void main_menu(int* sock){
-
-    server_status();
-
-    int index = -1;
+void main_menu(int* sock){      
+    
+    if(settings.show_status){server_status(); settings.show_status = false; }
 
     for(int i = 0; i < LastRedyIndex; i++){
 
@@ -290,17 +332,13 @@ void main_menu(int* sock){
 
     }
 
-    for(int i = 0; i < MAX_CLIENTS; i++){
+    if(show_clients){
 
-        if(client[i].socket == selected_fd && client[i].IS_ACTIVE){index = client[i].index; }
+        for(int i = 0; i < MAX_CLIENTS; i++){
 
-    }
+            if(client[i].IS_ACTIVE){printf("Client avalable at index: %d with fd %d\n", client[i].index, client[i].socket);}
 
-    if(index == -1){printf("Selected client at index: " CYAN "NONE\n" RESET_COLOR); }
-
-    else{
-
-        printf("Selected client at index: " CYAN "%d\n" RESET_COLOR, index);
+        }
 
     }
 
@@ -309,24 +347,39 @@ void main_menu(int* sock){
 
 }
 
-void server_info(){
-    
-    printf("SERVER VERSION: " CYAN "%d\n" RESET_COLOR, SERVER_VERSION); 
-    printf("SERVER ROLL: " CYAN "%s\n" RESET_COLOR, SERVER_ROLL); 
-
-}
-
 void server_status(){
 
-    if (settings.show_server_info) { printf("SERVER VERSION: " CYAN "%d\n" RESET_COLOR, SERVER_VERSION); }
-    if (settings.show_server_info) { printf("SERVER ROLL: " CYAN "%s\n" RESET_COLOR, SERVER_ROLL); }
+    if(settings.show_server_info){
 
-    if(settings.show_connected_clients){ printf("CONNECTED CLIENTS: " WHITE "%d\n" RESET_COLOR, active_clients); }
-    if(settings.show_unavalable_clients){ printf("UNAVALABLE / EMPTY SLOTS: " CYAN "%d\n" RESET_COLOR, empty_slots); }
+        printf(BLUE "[ SERVER INFO ]\n" RESET_COLOR);
+        printf("\n");
 
-    if(settings.show_max_fd){printf("Max FD: " CYAN "%d\n" RESET_COLOR, max_fd); }
-    if(settings.show_server_fd){printf("SERVER FD: " CYAN "%d\n" RESET_COLOR, sock);}
+        printf("SERVER VERSION   : " CYAN "%d\n" RESET_COLOR, SERVER_VERSION);
+        printf("SERVER ROLL      : " CYAN "%s\n" RESET_COLOR, SERVER_ROLL);
+        printf("\n");
+    }
 
+    if(settings.show_connected_clients || settings.show_unavalable_clients){
+    
+        printf(BLUE "[ CLIENT AND SLOT INFO ]\n" RESET_COLOR);
+        printf("\n");
+
+        if(settings.show_connected_clients){ printf("CONNECTED CLIENTS              : " CYAN "%d\n" RESET_COLOR, active_clients); }
+        if(settings.show_unavalable_clients){ printf(   "UNAVALABLE / EMPTY SLOTS       : " CYAN "%d\n" RESET_COLOR, empty_slots); }
+
+        printf("\n");
+    }
+
+    if(settings.show_max_fd || settings.show_server_fd){
+
+        printf(BLUE "[ FILE DESRIPTORS ]\n" RESET_COLOR);
+        printf("\n");
+
+        if(settings.show_max_fd){ printf("MAX FD    : " CYAN "%d\n" RESET_COLOR, max_fd);}
+        if(settings.show_server_fd){ printf("SERVER FD : " CYAN "%d\n" RESET_COLOR, sock);}
+
+        printf("\n");
+    }
 }
 
 void set_def_settings(){
@@ -336,6 +389,7 @@ void set_def_settings(){
     settings.show_server_info = true;
     settings.show_max_fd = true;
     settings.show_server_fd = true;
+    settings.show_status = true;
 
 }
 
@@ -357,29 +411,24 @@ bool net_log_init(){
     return true;
 }
 
-void client_manager(int index){
-
-    DNP_recv(&client[index]);
-
-}
-
 void help_menu(){
 
-    printf("To get a list of all clients enter:" CYAN "get clients\n" RESET_COLOR);
-
-    printf("To see all the server's settings enter: " CYAN "get settings\n" RESET_COLOR);
+    printf("To get a list of all clients enter: " CYAN "get clients\n" RESET_COLOR);
 
     printf("To select a client to communicate with use: " CYAN "select " PURPLE "<client index>\n" RESET_COLOR);
 
-    printf("The command 'enable' can be used to set the following things to active/true: " 
-    CYAN "server-info\n" RESET_COLOR);
+    printf("The command 'enable' can be used to enable the following things: " 
+    CYAN "server-info\n" RESET_COLOR "," CYAN "show-connected-clients "  RESET_COLOR "," CYAN "show-unavalable-slots\n" RESET_COLOR);
 
 
 
     printf("The disable command can set the following settings to false/inactive: " CYAN 
     "server-info " RESET_COLOR "," CYAN "show-connected-clients "  RESET_COLOR "," CYAN "show-unavalable-slots\n" RESET_COLOR);
 
-
+    printf("To exit the program enter: " CYAN "exit\n" RESET_COLOR);
+    printf("To get the server status/info enter: " CYAN "status\n" RESET_COLOR);
+    printf("To view the selected client's index enter: " CYAN "selected\n" RESET_COLOR);
+    printf("To view avalable clients enter: " CYAN "get-clients" RESET_COLOR ", if no client are avalable nothing will be displayed\n");
 }
 
 void set_tokens(){
@@ -426,4 +475,7 @@ void disconnect(fd_set *FdSet, int index){
     DNP_log("Failed to get falid new fd\n", "a");
     DNP_log("Sock size = %d, max_fd = %d\n", "a", sock, max_fd);
 
+}
+
+void print_ascii(){
 }

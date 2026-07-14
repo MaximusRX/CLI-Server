@@ -13,6 +13,7 @@ typedef struct{
     bool show_server_info;
     bool show_server_fd;
     bool show_max_fd;
+    bool show_status;
 
 } server_settings;
 
@@ -20,7 +21,8 @@ enum{
 
     TOK_ENABLE, TOK_DISABLE, TOK_SEND, TOK_INFO, TOK_INT, TOK_STRING, TOK_EXIT, TOK_HELP, TOK_CLEAR, 
     TOK_SELECT, TOK_UNKNOWN, TOK_SHOW_CONNECTED_CLIENTS, TOK_SHOW_UNAVLABLE_SLOTS, TOK_SHOW_INFO,
-    TOK_SERVER_INFO, TOK_EMPTY, TOK_SHOW_MAX_FD, TOK_SHOW_SERVER_FD
+    TOK_SERVER_INFO, TOK_EMPTY, TOK_SHOW_MAX_FD, TOK_SHOW_SERVER_FD, TOK_SELECTED, TOK_STATUS, 
+    TOK_SHOW_CLIENTS
 
 };
 
@@ -37,11 +39,11 @@ void main_menu(int* sock);
 void server_status();
 void set_def_settings();
 void shutdown_server();
-void server_info();
 bool net_log_init();
 void help_menu();
 void set_tokens();
 void disconnect(fd_set *fd, int index);
+void print_ascii();
 
 extern struct sockaddr_in addr;
 extern DNP_CLIENT client[];
@@ -56,3 +58,4 @@ extern int max_fd;
 extern socklen_t addr_size;
 extern int selected_fd;
 extern int sock;
+extern bool show_clients;
