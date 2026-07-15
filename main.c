@@ -42,7 +42,7 @@ int main(){
 	FD_SET(sock, &FdSet);
 
 	set_def_settings();
-	main_menu(&sock);
+	main_menu();
 
 	if(sock == -1){ DNP_log("DAILED TO SETUP SERVER, SOCK == -1\n", "a") ;return -1;}
 
@@ -62,7 +62,7 @@ int main(){
 			if(FD_ISSET(STDIN, &tempt_set)){
 				clear_screen();
 				input_handler(input_buff);
-				main_menu(&sock);
+				main_menu();
 
 			}
 

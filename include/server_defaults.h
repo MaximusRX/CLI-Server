@@ -35,7 +35,7 @@ typedef struct{
 
 
 void input_handler(char* input_buff);
-void main_menu(int* sock);
+void main_menu();
 void server_status();
 void set_def_settings();
 void shutdown_server();

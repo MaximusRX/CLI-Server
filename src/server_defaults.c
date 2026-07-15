@@ -322,7 +322,7 @@ void input_handler(char* input_buff){
 
 }
 
-void main_menu(int* sock){      
+void main_menu(){      
     
     if(settings.show_status){server_status(); settings.show_status = false; }
 
@@ -389,7 +389,7 @@ void set_def_settings(){
     settings.show_server_info = true;
     settings.show_max_fd = true;
     settings.show_server_fd = true;
-    settings.show_status = true;
+    settings.show_status = false;
 
 }
 
@@ -413,7 +413,7 @@ bool net_log_init(){
 
 void help_menu(){
 
-    printf("To get a list of all clients enter: " CYAN "get clients\n" RESET_COLOR);
+    printf("To get a list of all clients enter: " CYAN "get-clients\n" RESET_COLOR);
 
     printf("To select a client to communicate with use: " CYAN "select " PURPLE "<client index>\n" RESET_COLOR);
 
@@ -429,6 +429,7 @@ void help_menu(){
     printf("To get the server status/info enter: " CYAN "status\n" RESET_COLOR);
     printf("To view the selected client's index enter: " CYAN "selected\n" RESET_COLOR);
     printf("To view avalable clients enter: " CYAN "get-clients" RESET_COLOR ", if no client are avalable nothing will be displayed\n");
+    printf("To see what a client has send enter: " CYAN "info " RESET_COLOR "Note a valid client must be selected\n");
 }
 
 void set_tokens(){
