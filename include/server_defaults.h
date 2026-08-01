@@ -22,7 +22,7 @@ enum{
     TOK_ENABLE, TOK_DISABLE, TOK_SEND, TOK_INFO, TOK_INT, TOK_STRING, TOK_EXIT, TOK_HELP, TOK_CLEAR, 
     TOK_SELECT, TOK_UNKNOWN, TOK_SHOW_CONNECTED_CLIENTS, TOK_SHOW_UNAVLABLE_SLOTS, TOK_SHOW_INFO,
     TOK_SERVER_INFO, TOK_EMPTY, TOK_SHOW_MAX_FD, TOK_SHOW_SERVER_FD, TOK_SELECTED, TOK_STATUS, 
-    TOK_SHOW_CLIENTS
+    TOK_SHOW_CLIENTS, TOK_DOWNLOAD, TOK_UPLOAD
 
 };
 
@@ -44,6 +44,8 @@ void help_menu();
 void set_tokens();
 void disconnect(fd_set *fd, int index);
 void print_ascii();
+void upload(char* filename);
+void download();
 
 extern struct sockaddr_in addr;
 extern DNP_CLIENT client[];
@@ -59,3 +61,4 @@ extern socklen_t addr_size;
 extern int selected_fd;
 extern int sock;
 extern bool show_clients;
+extern int token_count;

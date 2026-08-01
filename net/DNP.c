@@ -1,5 +1,5 @@
 #include "DNP.h"
-#include <stdarg.h>
+#include <string.h>
 
 DNP_Logger DNP_logger;
 DNP_CLIENT client[MAX_CLIENTS];
@@ -108,11 +108,13 @@ int DNP_get_headder(DNP_CLIENT *client){
     client->header.recv_payload_size = ntohl( buff[0] );
     client->header.recv_payload_type = ntohl ( buff[1] );
 
-    if(client->header.recv_payload_size >  5242880 ){ DNP_log("RECV'd A INVALID SIZE, CLOSING CONNECTION\n", "a"); close(client->socket);}
+    if(client->header.recv_payload_size >  MAX_PAYLOAD_SIZE ){ DNP_log("RECV'd A INVALID SIZE, CLOSING CONNECTION\n", "a"); close(client->socket);}
 
     else if(client->packet.recv_payload != NULL){
-        
-        free(client->packet.recv_payload); client->packet.recv_payload = NULL;
+    
+        free(client->packet.recv_payload);
+        client->packet.recv_payload = NULL;
+
     
         
         client->packet.recv_payload = malloc(client->header.recv_payload_size + 1);
@@ -122,9 +124,16 @@ int DNP_get_headder(DNP_CLIENT *client){
 
 
 
-    else { client->packet.recv_payload = malloc(client->header.recv_payload_size + 1);
-            client->packet.recv_payload[client->header.recv_payload_size] = '\0';
+    else if(client->packet.recv_payload == NULL){
+        
+        client->packet.recv_payload = malloc(client->header.recv_payload_size + 1);
+        client->packet.recv_payload[client->header.recv_payload_size] = '\0';
 
+    }
+
+    else{
+
+        DNP_log(".........", "a");
     }
 
     return recvd_bytes;
@@ -214,12 +223,15 @@ int DNP_craft_header(DNP_CLIENT *client,char* buff){
 
     *token_1 = '\0';
 
-if(client->packet.send_payload != NULL){
-    free(client->packet.send_payload);
-    client->packet.send_payload = NULL;
-}
+    if(client->packet.send_payload != NULL){
 
-    client->packet.send_payload = strdup(token_1 + 1);
+        memset(client->packet.send_payload, 0, strlen(token_1 +1));
+        client->packet.send_payload = NULL;
+    }
+
+    strcpy(client->packet.send_payload, token_1 + 1);
+
+    //client->packet.send_payload = strdup(token_1 + 1);
     client->header.send_payload_size = strlen(client->packet.send_payload);
 
     if(strcmp(tempt, "BASH") == 0){ client->header.send_payload_type = BASH; }
@@ -373,5 +385,33 @@ void DNP_get_client_stats(){
         }
 
     }
+
+}
+
+int DNP_message(DNP_CLIENT* client, char* buff, int type){
+
+    client->header.send_payload_type = type;
+    client->header.send_payload_size = strlen(buff);
+
+    client->packet.send_payload = buff;
+
+    DNP_send_hedder(client);
+
+    if(client->socket <= 0){ printf("SOCKET ERROR <= 0, DNP_SEND, socket not valid\n"); return 1;}
+
+    int send_bytes = 0;
+
+    while(send_bytes != client->header.send_payload_size){
+        
+        int bytes = send(client->socket, client->packet.send_payload + send_bytes, client->header.send_payload_size - send_bytes, 0);
+
+        if(bytes <= 0){ return -1; }
+
+        send_bytes += bytes;   
+
+    }
+
+    return send_bytes;
+
 
 }

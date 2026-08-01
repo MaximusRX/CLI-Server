@@ -1,6 +1,4 @@
 #include "../include/server_defaults.h"
-#include <stdio.h>
-#include <stdlib.h>
 
 server_settings settings;
 struct sockaddr_in addr;
@@ -11,6 +9,7 @@ int LastRedyIndex = 0;
 int ready_clients[MAX_CLIENTS];
 
 int IsReady = 0;
+int token_count = 0;
 socklen_t addr_size = sizeof(addr);
 int max_fd = 0;
 int selected_fd = -1;
@@ -92,9 +91,39 @@ void input_handler(char* input_buff){
             tokens[LastTokIndex].type = TOK_SEND;
             LastTokIndex++;
 
-            char test_delim[] = "|";
+            token = strtok(NULL, delim);
 
-            token = strtok(NULL, test_delim);
+            tokens[LastTokIndex].type = TOK_STRING;
+            strcpy(tokens[LastTokIndex].value, token);
+            LastTokIndex++;      
+
+            token = NULL;
+        }
+
+        else if (strcmp(token, "download") == 0) {
+
+            tokens[LastTokIndex].type = TOK_DOWNLOAD;
+            LastTokIndex++;
+
+            token = strtok(NULL, delim);
+
+            if(token == NULL){break; }
+
+            tokens[LastTokIndex].type = TOK_STRING;
+            strcpy(tokens[LastTokIndex].value, token);
+            LastTokIndex++;      
+
+            token = NULL;
+        }
+
+        else if (strcmp(token, "upload") == 0) {
+
+            tokens[LastTokIndex].type = TOK_UPLOAD;
+            LastTokIndex++;
+
+            token = strtok(NULL, delim);
+            
+            if(token == NULL){break; }
 
             strcpy(tokens[LastTokIndex].value, token);
             tokens[LastTokIndex].type = TOK_STRING;
@@ -271,7 +300,7 @@ void input_handler(char* input_buff){
 
         case TOK_SEND:
 
-            DNP_send(&client[selected_fd_index], tokens[1].value);
+            DNP_message(&client[selected_fd_index], tokens[1].value, DEFAULT_COMMAND);
             printf("Send %s\n", tokens[1].value);
 
             break;
@@ -292,6 +321,12 @@ void input_handler(char* input_buff){
 
                 }
             }
+
+            break;
+
+        case TOK_UPLOAD:
+
+            
 
             break;
 
@@ -478,5 +513,25 @@ void disconnect(fd_set *FdSet, int index){
 
 }
 
-void print_ascii(){
+void upload(char* filename){
+
+    char buff[100];
+    char msg[MAX_PAYLOAD_SIZE];
+
+    FILE*
+
+    file = fopen(filename, "r");
+
+    if(file == NULL){ printf("Error, unabke to open file\n"); strcpy(msg, "Error, unabke to open file"); return;}
+            
+    while( fgets(buff, 100, file) != NULL){
+
+        strcat(msg, buff);
+
+    }
+
+
+
+    DNP_message(&client[selected_fd_index], msg, UPLOAD);
+
 }

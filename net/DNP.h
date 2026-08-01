@@ -16,7 +16,13 @@
 #pragma once
 
 //Protocol Version
-#define VERSION 2
+#define VERSION 5
+
+/*
+    Maximum payload size
+*/
+
+#define MAX_PAYLOAD_SIZE 5242880
 
 /*
     Default network Properties.
@@ -37,7 +43,7 @@ extern int empty_slots;
 */
 enum COMMAND_TYPES{
 
-    DEFAULT_COMMAND, BASH, MESSAGE, INFORM, UNKNOWN = 999
+    DEFAULT_COMMAND, BASH, MESSAGE, INFORM, UNKNOWN = 999, DOWNLOAD, UPLOAD
 
 };
 
@@ -189,3 +195,9 @@ int DNP_get_valid_slot();
 */
 
 void DNP_get_client_stats();
+
+/*
+    This function sends a WHOLE buffer's data as type message.
+*/
+
+int DNP_message(DNP_CLIENT* client, char* buff, int type);
