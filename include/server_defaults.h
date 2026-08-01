@@ -29,7 +29,8 @@ enum{
 typedef struct{
 
     int type;
-    char value[TOKEN_MAX_VAL_SIZE];
+    char valuestr[TOKEN_MAX_VAL_SIZE];
+    int valueint;
 
 } Token;
 
@@ -45,7 +46,7 @@ void set_tokens();
 void disconnect(fd_set *fd, int index);
 void print_ascii();
 void upload(char* filename);
-void download();
+void download(char* filename);
 
 extern struct sockaddr_in addr;
 extern DNP_CLIENT client[];

@@ -1,4 +1,5 @@
 #include "../include/server_defaults.h"
+#include <stdio.h>
 
 server_settings settings;
 struct sockaddr_in addr;
@@ -45,14 +46,15 @@ void input_handler(char* input_buff){
         else if (strcmp(token, "help") == 0) {
 
             tokens[LastTokIndex].type = TOK_HELP;
-            LastTokIndex++;
             token = strtok(NULL, delim);
+            LastTokIndex++;
         }
 
         else if (strcmp(token, "clear") == 0) {
 
             tokens[LastTokIndex].type = TOK_CLEAR;
             token = strtok(NULL, delim);
+            LastTokIndex++;
         }
 
         else if (strcmp(token, "enable") == 0) {
@@ -81,8 +83,8 @@ void input_handler(char* input_buff){
             if(token == NULL){printf("Incomplete usage of select\n"); return;}
 
             tokens[LastTokIndex].type = TOK_INT;
-            selected_fd_index = atoi(tokens[LastTokIndex].value);
-            strcpy(tokens[LastTokIndex].value, token);
+            tokens[LastTokIndex].valueint = atoi (token);
+            LastTokIndex++;
 
         }
 
@@ -94,7 +96,7 @@ void input_handler(char* input_buff){
             token = strtok(NULL, delim);
 
             tokens[LastTokIndex].type = TOK_STRING;
-            strcpy(tokens[LastTokIndex].value, token);
+            strcpy(tokens[LastTokIndex].valuestr, token);
             LastTokIndex++;      
 
             token = NULL;
@@ -110,7 +112,7 @@ void input_handler(char* input_buff){
             if(token == NULL){break; }
 
             tokens[LastTokIndex].type = TOK_STRING;
-            strcpy(tokens[LastTokIndex].value, token);
+            strcpy(tokens[LastTokIndex].valuestr, token);
             LastTokIndex++;      
 
             token = NULL;
@@ -125,7 +127,7 @@ void input_handler(char* input_buff){
             
             if(token == NULL){break; }
 
-            strcpy(tokens[LastTokIndex].value, token);
+            strcpy(tokens[LastTokIndex].valuestr, token);
             tokens[LastTokIndex].type = TOK_STRING;
             LastTokIndex++;      
 
@@ -189,8 +191,8 @@ void input_handler(char* input_buff){
         else{
 
             tokens[LastTokIndex].type = TOK_UNKNOWN;
-            tokens[LastTokIndex].value[strlen(tokens[LastTokIndex].value)] = '\0';
-            strcpy(tokens[LastTokIndex].value, token);
+            tokens[LastTokIndex].valuestr[strlen(tokens[LastTokIndex].valuestr)] = '\0';
+            strcpy(tokens[LastTokIndex].valuestr, token);
             LastTokIndex++;
             token = strtok(NULL, delim);
 
@@ -213,95 +215,94 @@ void input_handler(char* input_buff){
             break;
 
         case TOK_UNKNOWN:
-            printf("Inavlid command: %s\n", tokens[0].value);
+            printf("Inavlid command: %s\n", tokens[0].valuestr);
             break;
 
         case TOK_DISABLE:
 
-            if(tokens[1].type == TOK_SHOW_CONNECTED_CLIENTS){
-                settings.show_connected_clients = false;
-            }
+            switch(tokens[1].type){
+                
+                case TOK_SHOW_CLIENTS:
+                    settings.show_connected_clients = false;
+                    break; 
 
-            else if(tokens[1].type == TOK_SERVER_INFO){
-                settings.show_server_info = false;
-            }
+                case TOK_SERVER_INFO:
+                    settings.show_server_info = false;
+                    break;
 
-            else if(tokens[1].type == TOK_SHOW_UNAVLABLE_SLOTS){
-                settings.show_unavalable_clients = false;
-            
-            }    
-       
-            else if(tokens[1].type == TOK_SHOW_MAX_FD){
-                settings.show_max_fd = false;
-            
-            }             
+                case TOK_SHOW_UNAVLABLE_SLOTS:
+                    settings.show_unavalable_clients = false;
+                    break;
 
-            else if(tokens[1].type == TOK_SHOW_SERVER_FD){
-                settings.show_server_fd = false;
-            
-            } 
+                case TOK_SHOW_MAX_FD:
+                    settings.show_max_fd = false;
+                    break;
 
-            else{
+                case TOK_SHOW_SERVER_FD:
+                    settings.show_server_fd = false;
+                    break;
 
-                printf("Incomplete or incorrect usage of disble\n");
-                printf("Tok 1: %s\n", tokens[1].value);
-                break;
+                default:
+                    printf("Incomplete or incorrect usage of disble\n");
+                    printf("Tok 1: %s\n", tokens[1].valuestr);
+                    break;
+            }   
 
-            }
+            break;               
 
-            break;
+             
+
+        
 
         case TOK_ENABLE:
 
-            if(tokens[1].type == TOK_SHOW_CONNECTED_CLIENTS){
-                settings.show_connected_clients = true; 
-            }
+            switch(tokens[1].type){
+                
+                case TOK_SHOW_CLIENTS:
+                    settings.show_connected_clients = true;
+                    break; 
 
-            else if(tokens[1].type == TOK_SERVER_INFO){
-                settings.show_server_info = true;
-                printf("ENABLED\n");
-            }
+                case TOK_SERVER_INFO:
+                    settings.show_server_info = true;
+                    break;
 
-            else if(tokens[1].type == TOK_SHOW_UNAVLABLE_SLOTS){
-                settings.show_unavalable_clients = true;
-            }    
+                case TOK_SHOW_UNAVLABLE_SLOTS:
+                    settings.show_unavalable_clients = true;
+                    break;
 
-            else if(tokens[1].type == TOK_SHOW_MAX_FD){
-                settings.show_max_fd = true;
+                case TOK_SHOW_MAX_FD:
+                    settings.show_max_fd = true;
+                    break;
+
+                case TOK_SHOW_SERVER_FD:
+                    settings.show_server_fd = true;
+                    break;
+
+                default:
+                    printf("Incomplete or incorrect usage of enable\n");
+                    printf("Tok 1: %s\n", tokens[1].valuestr);
+                    break;
+            }   
             
-            }             
-
-            else if(tokens[1].type == TOK_SHOW_SERVER_FD){
-                settings.show_server_fd = true;
-            
-            } 
-
-            else{
-
-                printf("Incomplete or incorrect usage of enable\n");
-                printf("Tok 1: %s\n", tokens[1].value);
-                break;
-
-            }
-
-            break;
+            break;   
 
         case TOK_SELECT:
 
-            tempt_num = atoi(tokens[1].value);
+    
 
-            if(tempt_num > 80 || tempt_num < 0){printf("Invalid usage of select\n"); break; }
-            if(!client[tempt_num].IS_ACTIVE){printf("Invalid use of select, client is not avalable\n"); selected_fd_index = -1; break;}
+            if(tokens[1].valueint > 80 || tokens[1].valueint < 0){printf("Invalid client index given\n"); }
+
+            if(!client[tokens[1].valueint].IS_ACTIVE){printf("Invalid use of select, client is not avalable\n"); selected_fd_index = -1; break;}
             
-            selected_fd = client[tempt_num].socket;
-            selected_fd_index = client[tempt_num].index;
+            selected_fd = client[tokens[1].valueint].socket;
+            selected_fd_index = client[tokens[1].valueint].index;
 
             break;
 
         case TOK_SEND:
 
-            DNP_message(&client[selected_fd_index], tokens[1].value, DEFAULT_COMMAND);
-            printf("Send %s\n", tokens[1].value);
+            DNP_message(&client[selected_fd_index], tokens[1].valuestr, DEFAULT_COMMAND);
+            printf("Send %s\n", tokens[1].valuestr);
 
             break;
 
@@ -325,9 +326,14 @@ void input_handler(char* input_buff){
             break;
 
         case TOK_UPLOAD:
+            if(tokens[1].type == TOK_EMPTY){printf("Provide file to upload...\n"); }
+            upload(tokens[1].valuestr);
 
-            
+            break;
 
+        case TOK_DOWNLOAD:
+            if(tokens[1].type == TOK_EMPTY){printf("Provide file to download...\n"); }
+            download(tokens[1].valuestr);
             break;
 
         case TOK_SELECTED:
@@ -472,7 +478,8 @@ void set_tokens(){
     for(int i = 0; i < MAX_TOKENS; i++){
 
         tokens[i].type = TOK_EMPTY;
-        memset(tokens[i].value, 0, TOKEN_MAX_VAL_SIZE);
+        memset(tokens[i].valuestr, 0, TOKEN_MAX_VAL_SIZE);
+        tokens[1].valueint = -1;
 
     }
 
@@ -522,7 +529,7 @@ void upload(char* filename){
 
     file = fopen(filename, "r");
 
-    if(file == NULL){ printf("Error, unabke to open file\n"); strcpy(msg, "Error, unabke to open file"); return;}
+    if(file == NULL){ printf("Error, unable to open file, make sure the filename is correct or the file exists\n"); strcpy(msg, "Error, unabke to open file"); return;}
             
     while( fgets(buff, 100, file) != NULL){
 
@@ -533,5 +540,17 @@ void upload(char* filename){
 
 
     DNP_message(&client[selected_fd_index], msg, UPLOAD);
+
+}
+
+void download(char* filename){
+
+    FILE* file = fopen(filename, "w");
+
+    DNP_message(&client[selected_fd_index], filename, DOWNLOAD);
+
+    DNP_recv(&client[selected_fd_index]);
+
+    fputs(client[selected_fd_index].packet.recv_payload, file);
 
 }
