@@ -355,12 +355,15 @@ int DNP_get_valid_slot(){
 
 		if(!client->IS_ACTIVE){
 
+            DNP_log("Trying to check slot: %d", "a",  i);
+
 			DNP_log(  "[DNP LOG] found a valid slot at index %d", "a", i);
 			return i;
 
 		}
 
 	}
+
     DNP_log(  "[DNP LOG] Failed to get valid a slot", "a");
     return -1;
 }

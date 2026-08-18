@@ -2,10 +2,14 @@
 #include "include/stdtypes.h"
 #include "include/server_defaults.h"
 #include "net/DNP.h"
+#include <asm-generic/socket.h>
 #include <sys/select.h>
+#include <sys/socket.h>
 
 
 int main(){
+
+	int FORCE_BIND_VAL = 1;
 
 	clear_screen();
 
@@ -24,14 +28,16 @@ int main(){
 
 	if(sock == -1){DNP_log("Failed To Get Valid FD\n", "a"); return -1;}
 
+	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &FORCE_BIND_VAL, sizeof(FORCE_BIND_VAL));
+
 	int binder = bind(sock, (struct sockaddr*) &addr, addr_size);
 
-	if(binder == -1){DNP_log("Server Failed to bind", "a");}
+	if(binder == -1){DNP_log("Server Failed to bind", "a"); exit(1);}
 	else if(binder == 0){DNP_log("SERVER SUCESFULLY BINDED", "a"); }
 
 	int listener = listen(sock, MAX_CLIENTS);
 
-	if(listener == -1){DNP_log("[DNP LOG] FAILED TO LISTEN FOR CONNECTIONS", "a"); }
+	if(listener == -1){DNP_log("[DNP LOG] FAILED TO LISTEN FOR CONNECTIONS", "a"); exit(1); }
 	else if(listener == 0){DNP_log("[DNP LOG] LISTENING FOR CONNECTIONS", "a"); }
 
 	DNP_init_client_arr();
@@ -102,7 +108,17 @@ int main(){
 					if(FD_ISSET(client[i].socket, &tempt_set)){
 
 						int status = DNP_recv(&client[i]);
-						ready_clients[LastRedyIndex] = client[i].index;
+
+						bool is_in_arr = false;
+
+						for(int i = 0; i > LastRedyIndex; i++)
+						{
+
+							if(client[i].index == ready_clients[i]){is_in_arr = true; }
+
+						}
+
+						if(!is_in_arr) { ready_clients[LastRedyIndex] = client[i].index; }
 
 						if(status == 0 || status == -1){
 

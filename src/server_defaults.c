@@ -1,5 +1,6 @@
 #include "../include/server_defaults.h"
 #include <stdio.h>
+#include <sys/socket.h>
 
 server_settings settings;
 struct sockaddr_in addr;
@@ -17,7 +18,6 @@ int selected_fd = -1;
 int selected_fd_index = -1;
 int sock = 0;
 int tempt_num = 0;
-bool show_clients = false;
 
 void input_handler(char* input_buff){
 
@@ -50,6 +50,13 @@ void input_handler(char* input_buff){
             LastTokIndex++;
         }
 
+        else if (strcmp(token, "show-clients") == 0) {
+
+            tokens[LastTokIndex].type = TOK_SHOW_CLIENTS;
+            token = strtok(NULL, delim);
+            LastTokIndex++;
+        }
+
         else if (strcmp(token, "clear") == 0) {
 
             tokens[LastTokIndex].type = TOK_CLEAR;
@@ -69,8 +76,8 @@ void input_handler(char* input_buff){
 
             tokens[LastTokIndex].type = TOK_DISABLE;
             LastTokIndex++;
-            token = strtok(NULL, delim);
 
+            token = strtok(NULL, delim);
         }
         
         else if (strcmp(token, "select") == 0) {
@@ -183,7 +190,7 @@ void input_handler(char* input_buff){
         } 
 
         else if (strcmp(token, "get-clients") == 0) {
-            tokens[LastTokIndex].type = TOK_SHOW_CLIENTS;
+            tokens[LastTokIndex].type = TOK_GET_CLIENTS;
             LastTokIndex++;
             token = strtok(NULL, delim);
         } 
@@ -203,7 +210,7 @@ void input_handler(char* input_buff){
     switch (tokens[0].type) {
 
         case TOK_EXIT:
-            exit(0);
+            shutdown_server();
             break;
 
         case TOK_HELP:
@@ -214,6 +221,22 @@ void input_handler(char* input_buff){
             clear_screen();
             break;
 
+        case TOK_GET_CLIENTS:
+
+            for(int i = 0; i < LastRedyIndex; i++){
+
+                if(client[i].IS_ACTIVE){printf("Ready client: " CYAN "%d\n" RESET_COLOR, ready_clients[i]); }
+
+            }
+
+            for(int i = 0; i < MAX_CLIENTS; i++){
+
+                if(client[i].IS_ACTIVE){printf("Active client at index: "  CYAN" %d\n" RESET_COLOR, i); }
+
+            }
+
+            break;
+
         case TOK_UNKNOWN:
             printf("Inavlid command: %s\n", tokens[0].valuestr);
             break;
@@ -221,8 +244,13 @@ void input_handler(char* input_buff){
         case TOK_DISABLE:
 
             switch(tokens[1].type){
-                
+
                 case TOK_SHOW_CLIENTS:
+
+                    settings.show_clients = false;
+                    break;
+                
+                case TOK_SHOW_CONNECTED_CLIENTS:
                     settings.show_connected_clients = false;
                     break; 
 
@@ -249,16 +277,19 @@ void input_handler(char* input_buff){
             }   
 
             break;               
-
-             
-
         
 
         case TOK_ENABLE:
 
             switch(tokens[1].type){
-                
+
                 case TOK_SHOW_CLIENTS:
+
+                    settings.show_clients = true;
+                    break;
+
+
+                case TOK_SHOW_CONNECTED_CLIENTS:
                     settings.show_connected_clients = true;
                     break; 
 
@@ -286,9 +317,7 @@ void input_handler(char* input_buff){
             
             break;   
 
-        case TOK_SELECT:
-
-    
+        case TOK_SELECT:    
 
             if(tokens[1].valueint > 80 || tokens[1].valueint < 0){printf("Invalid client index given\n"); }
 
@@ -342,7 +371,7 @@ void input_handler(char* input_buff){
 
             else{
                 
-                printf("SELECTED CLIENT AT INDEX: " CYAN "%d\n", selected_fd_index);
+                printf("SELECTED CLIENT AT INDEX: " CYAN "%d\n" RESET_COLOR, selected_fd_index);
             }
 
             break;
@@ -355,7 +384,7 @@ void input_handler(char* input_buff){
 
         case TOK_SHOW_CLIENTS:   
 
-                show_clients = true;
+                
 
             break;
 
@@ -367,13 +396,7 @@ void main_menu(){
     
     if(settings.show_status){server_status(); settings.show_status = false; }
 
-    for(int i = 0; i < LastRedyIndex; i++){
-
-        printf("Ready clients: " CYAN "%d\n" RESET_COLOR, ready_clients[i]);
-
-    }
-
-    if(show_clients){
+    if(settings.show_clients){
 
         for(int i = 0; i < MAX_CLIENTS; i++){
 
@@ -431,6 +454,7 @@ void set_def_settings(){
     settings.show_max_fd = true;
     settings.show_server_fd = true;
     settings.show_status = false;
+    settings.show_clients = true;
 
 }
 
