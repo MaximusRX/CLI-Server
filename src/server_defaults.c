@@ -513,14 +513,13 @@ void disconnect(fd_set *FdSet, int index){
 
 	active_clients--;
 	empty_slots++;
-    max_fd = 0;
+    max_fd = sock;
 
 	FD_CLR(client[index].socket, FdSet);
 
     DNP_init_client(&client[index]);
 
     for(int i = 0; i < MAX_CLIENTS; i++){
-
 
         if(client[i].socket > max_fd && client[i].IS_ACTIVE){
 
@@ -532,15 +531,7 @@ void disconnect(fd_set *FdSet, int index){
 
     }
 
-    if(sock > max_fd ){
-
-        max_fd = sock;
-        DNP_log("Assigned server fd as new max fd\n", "a");
-        return;
-    }
-
-    DNP_log("Failed to get falid new fd\n", "a");
-    DNP_log("Sock size = %d, max_fd = %d\n", "a", sock, max_fd);
+    DNP_log("Server socket = %d, max_fd = %d\n", "a", sock, max_fd);
 
 }
 

@@ -89,14 +89,16 @@ int main(){
 
 					if(status == -1){ DNP_log("Failed to get falid index for client", "a"); close(accepted_fd); }
 
-					DNP_assing_client(&client[status], accepted_fd);
+					else{
+						
+						DNP_assing_client(&client[status], accepted_fd);
 
-					FD_SET(accepted_fd, &FdSet);
-					active_clients++;
-					empty_slots--;
+						FD_SET(accepted_fd, &FdSet);
+						active_clients++;
+						empty_slots--;
 
-					DNP_log("Client connected with FD %d and was assigned slot %d\n", "a", accepted_fd, status);
-
+						DNP_log("Client connected with FD %d and was assigned slot %d\n", "a", accepted_fd, status);
+					}
 				}
 
 			}
